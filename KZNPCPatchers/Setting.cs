@@ -16,8 +16,13 @@ namespace KZNPCPatchers
         [SynthesisTooltip("Directory to which facegen should be copied (Your mod folder)")]
         public string FacegenOutputDirectory { get; set; } = "";
 
+
         [SynthesisOrder]
-        [SynthesisTooltip("target mod")]
+        [SynthesisTooltip("Source mods")]
+        public List<ModKey> SourceMods = new List<ModKey>();
+        
+        [SynthesisOrder]
+        [SynthesisTooltip("Target mods")]
         public List<ModKey> TargetMods = new List<ModKey>();
 
 

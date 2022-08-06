@@ -15,6 +15,8 @@ namespace KZNPCPatchers
     public class Program
     {
         static Lazy<Settings> Settings = null!;
+        static Dictionary<string, Dictionary<string, string[]>> raceDictionary = new Dictionary<string, Dictionary<string, string[]>>();
+
 
         public static Task<int> Main(string[] args)
         {
@@ -28,7 +30,7 @@ namespace KZNPCPatchers
                 .Run(args);
         }
 
-        public static string Rand(string[] selectedNpcId, int seed)
+        public static string Rand(string[] originId, int seed)
         {
             Random rnd;
             var isDupeName = Settings.Value.SameName;
@@ -42,96 +44,9 @@ namespace KZNPCPatchers
             {
                 rnd = new Random();
             }
-            int index = rnd.Next(selectedNpcId.Length);
-            return selectedNpcId[index];
+            int index = rnd.Next(originId.Length);
+            return originId[index];
         }
-
-
-        public static string KhaRand(float weight, int seed, bool isFemale)
-        {
-
-            //Vanilla Khajiit female base id
-            string[] f100 = { "0353C7", "01B1D9", "01B1D3" };
-            string[] f80 = { "0CE086" };
-            string[] f50 = { "01B1D6", "0CED00", "01B1D0", "06C868", "0457FA" };
-            string[] f30 = { "0CE081" };
-            string[] f20 = { "103516" };
-            string[] f10 = { "05BF3D" };
-            string[] f0 = { "01B1DA" };
-
-            //Vanilla Khajiit male base id
-            string[] m100 = { "109A7F", "01B1D5", "0361F3" };
-            string[] m80 = { "00CFBD", "03B0E6" };
-            string[] m50 = { "03B0E7", "0D37CF", "013298", "01B1DB" };
-            string[] m30 = { "01B1CF", "04D12B", "01C195", "01B1D2" };
-            string[] m20 = { "0954BF" };
-            string[] m10 = { "02ABC2", "089986", "02E3F0" };
-
-            //using same weight for maximum compatibility
-            if (isFemale)
-            {
-                if (weight == 100) return Rand(f100, seed);
-                else if (weight >= 80) return Rand(f80, seed);
-                else if (weight >= 50) return Rand(f50, seed);
-                else if (weight >= 30) return Rand(f30, seed);
-                else if (weight >= 20) return Rand(f20, seed);
-                else if (weight >= 10) return Rand(f10, seed);
-                else return Rand(f0, seed);
-            }
-            else
-            {
-                if (weight == 100) return Rand(m100, seed);
-                else if (weight >= 80) return Rand(m80, seed);
-                else if (weight >= 50) return Rand(m50, seed);
-                else if (weight >= 30) return Rand(m30, seed);
-                else if (weight >= 20) return Rand(m20, seed);
-                else return Rand(m10, seed);
-            }
-
-
-        }
-
-
-        public static string AghRand(float weight, int seed, bool isFemale)
-        {
-
-            //Vanilla Argonian female base id
-            string[] f100 = { "013268" };
-            string[] f80 = { "013382", "0B878C" };
-            string[] f50 = { "056553", "01335A", "103511" };
-            string[] f30 = { "013365" };
-            string[] f0 = { "01411A", "0457FB" };
-
-            //Vanilla Argonian male base id
-            string[] m100 = { "105561", "02E447", "01C3AA", "01360A" };
-            string[] m80 = { "01328D" };
-            string[] m50 = { "055B40", "055A1C", "103512", "06CD5B", "01B072", "01412F", "0D5046", "01412E" };
-            string[] m30 = { "106118", "013284" };
-            string[] m20 = { "0BBDA0", "01403E", "03537E" };
-            string[] m10 = { "04C735", "0C1A9F" };
-            string[] m0 = { "020040", "014130", "0457FE", "0E9DAB" };
-
-            //using same weight for maximum compatibility
-            if (isFemale)
-            {
-                if (weight == 100) return Rand(f100, seed);
-                else if (weight >= 80) return Rand(f80, seed);
-                else if (weight >= 50) return Rand(f50, seed);
-                else if (weight >= 30) return Rand(f30, seed);
-                else return Rand(f0, seed);
-            }
-            else
-            {
-                if (weight == 100) return Rand(m100, seed);
-                else if (weight >= 80) return Rand(m80, seed);
-                else if (weight >= 50) return Rand(m50, seed);
-                else if (weight >= 30) return Rand(m30, seed);
-                else if (weight >= 20) return Rand(m20, seed);
-                else if (weight >= 10) return Rand(m10, seed);
-                else return Rand(m0, seed);
-            }
-        }
-
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
@@ -152,22 +67,201 @@ namespace KZNPCPatchers
                 .Where(x => x.Npcs.Count > 0 && Settings.Value.TargetMods.Contains(x.ModKey))
                 .ToArray();
 
-            System.Console.WriteLine("Files to map to:");
+            System.Console.WriteLine("Target mod:");
             foreach (var modKey in npcGroups.Select(x => x.ModKey))
             {
-                System.Console.WriteLine($"  {modKey}");
+                System.Console.WriteLine($"{modKey}");
             }
+
+
+            CreateNpcsPool(state);
 
             uint count = 0;
 
-            // create dictionary for array of string
-            // Dictionary<string, string[]> seperateWeight = new Dictionary<string, string[]>();
-            // create dictionary for seperateWeight Dictionary
-            Dictionary<string, Dictionary<string, string[]>> raceDictionary = new Dictionary<string, Dictionary<string, string[]>>();
 
-            // create Dynamic object
-            dynamic dyn = new System.Dynamic.ExpandoObject();
 
+            // For every Npc that exists
+            foreach (var npc in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
+            {
+                //For every Npc group in our target mods, in order
+                foreach (var npcGroup in npcGroups)
+                {
+
+                    var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
+                    var npcRace = (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID;
+                    bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
+                    // bool isProtected = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Protected);
+
+
+                    // If our target mod contains a copy of the npc
+                    if (!npcGroup.Npcs.TryGetValue(npc.FormKey, out var targetNpc))
+                    {
+                        System.Console.WriteLine("Duplicate" + npc.Name);
+                        continue;
+                    }
+
+                    System.Console.WriteLine("Not Duplicate" + npc.Name);
+
+
+                    if (npcRace != null)
+                    {
+                        if (!IsSelectedRace(npcRace.ToString()) || !isFemale)
+                        {
+                            continue;
+                        }
+
+
+                        // System.Console.WriteLine(Settings.Value.TargetMods + " " + modifiedNpc.FormKey.IDString() + "   " + (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID);
+
+                        // Base Source Npc id
+                        string originId = "";
+
+                        // Seed if using same name
+                        int seed = 0;
+
+
+                        if (!raceDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()))
+                        {
+                            System.Console.WriteLine("No weight in range, selecting first weight...");
+
+                            var tempWeight = 0;
+                            // get first key from raceDictionary[npcRace]
+                            foreach (var key in raceDictionary[npcRace].Keys)
+                            {
+                                tempWeight = int.Parse(key);
+                                break;
+                            }
+                            if (raceDictionary[npcRace].ContainsKey(tempWeight.ToString()))
+                            {
+                                originId = Rand(raceDictionary[npcRace][tempWeight.ToString()], seed);
+                            }
+                            else
+                            {
+                                System.Console.WriteLine("No race found");
+                                System.Console.WriteLine("--------");
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            System.Console.WriteLine("Pass weight check");
+                            originId = Rand(raceDictionary[npcRace][modifiedNpc.Weight.ToString()], seed);
+                        }
+
+                        // Generate seed from name
+                        if (modifiedNpc.Name != null)
+                        {
+                            seed = (int)modifiedNpc.Name.ToString()[0] % 32;
+                        }
+
+
+                        // var origin = state.LoadOrder.PriorityOrder.Npc().WinningOverrides().Where(npc => (npc.FormKey.IDString().Equals(originId))).Select(npc => npc.DeepCopy()).ToArray();
+
+                        // var originNpc = origin[0];
+
+                        // System.Console.WriteLine("Source NPC is " + originNpc.FormKey.IDString() + " || " + originNpc.Name + " || " + "isFemale: " + isFemale + " || " + originNpc.Weight);
+                        // System.Console.WriteLine("Target NPC is " + modifiedNpc.FormKey.IDString() + " || " + modifiedNpc.Name);
+                        // System.Console.WriteLine("--------");
+
+                        // //From NPC appreance copier
+                        // //HANDLE FACEGEN HERE
+                        // string originNifPath = state.DataFolderPath + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + originNpc.FormKey.ModKey.ToString() + "\\00" + originNpc.FormKey.IDString() + ".nif";
+                        // string modedNifPath = outputDir + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".nif";
+                        // if (!File.Exists(originNifPath))
+                        // {
+                        //     Console.WriteLine("The following Facegen .nif does not exist. If it is within a BSA, please extract it. Patching of this NPC will be skipped.\n{0}", originNifPath);
+                        //     continue;
+                        // }
+
+                        // string originDdsPath = state.DataFolderPath + "\\textures\\actors\\character\\facegendata\\facetint\\" + originNpc.FormKey.ModKey.ToString() + "\\00" + originNpc.FormKey.IDString() + ".dds";
+                        // string modedDdsPath = outputDir + "\\textures\\actors\\character\\facegendata\\facetint\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".dds";
+                        // if (!File.Exists(originDdsPath))
+                        // {
+                        //     Console.WriteLine("The following Facegen .dds does not exist. If it is within a BSA, please extract it. Patching of this NPC will be skipped.\n{0}", originDdsPath);
+                        //     continue;
+                        // }
+
+                        // // Copy NPC Facegen Nif and Dds from the donor to acceptor NPC
+
+                        // // first make the output paths if they don't exist
+                        // Directory.CreateDirectory(outputDir + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + modifiedNpc.FormKey.ModKey.ToString());
+                        // Directory.CreateDirectory(outputDir + "\\textures\\actors\\character\\facegendata\\facetint\\" + modifiedNpc.FormKey.ModKey.ToString());
+
+                        // // then copy the facegen to those paths
+                        // File.Copy(originNifPath, modedNifPath, true);
+                        // File.Copy(originDdsPath, modedDdsPath, true);
+                        // // END FACEGEN
+
+                        // // //Race
+                        // // modifiedNpc.Race.SetTo(originNpc.Race);
+
+                        // //Head Texture
+                        // modifiedNpc.HeadTexture.SetTo(originNpc.HeadTexture.FormKeyNullable);
+
+                        // //Head Parts
+                        // modifiedNpc.HeadParts.Clear();
+                        // foreach (var hp in originNpc.HeadParts)
+                        // {
+                        //     modifiedNpc.HeadParts.Add(hp);
+                        // }
+
+                        // //Face Morph
+                        // if (modifiedNpc.FaceMorph != null && originNpc.FaceMorph != null)
+                        // {
+                        //     modifiedNpc.FaceMorph.Clear();
+                        //     modifiedNpc.FaceMorph.DeepCopyIn(originNpc.FaceMorph);
+                        // }
+
+                        // //Face Parts
+                        // if (modifiedNpc.FaceParts != null && originNpc.FaceParts != null)
+                        // {
+                        //     modifiedNpc.FaceParts.Clear();
+                        //     modifiedNpc.FaceParts.DeepCopyIn(originNpc.FaceParts);
+                        // }
+
+                        // //Hair Color
+                        // modifiedNpc.HairColor.SetTo(originNpc.HairColor.FormKeyNullable);
+
+                        // //Texture Lighting
+                        // modifiedNpc.TextureLighting = originNpc.TextureLighting;
+
+                        // //Tint Layers
+                        // modifiedNpc.TintLayers.Clear();
+                        // foreach (var tl in originNpc.TintLayers)
+                        // {
+                        //     TintLayer newTintLayer = new TintLayer();
+                        //     newTintLayer.DeepCopyIn(tl);
+                        //     modifiedNpc.TintLayers.Add(newTintLayer);
+                        // }
+
+                        // //Height and Weight
+                        // modifiedNpc.Height = originNpc.Height;
+                        // modifiedNpc.Weight = originNpc.Weight;
+                        count++;
+                    }
+                }
+            }
+            // System.Console.WriteLine("Finished" + seperateWeight);
+
+            System.Console.WriteLine($"Patches {count} Npcs");
+        }
+
+        public static void CreateNpcsPool(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+        {
+            var npcGroups = state.LoadOrder.ListedOrder
+               .Select(listing => listing.Mod)
+               .NotNull()
+               .Select(x => (x.ModKey, x.Npcs))
+               .Where(x => x.Npcs.Count > 0 && Settings.Value.SourceMods.Contains(x.ModKey))
+               .ToArray();
+
+            System.Console.WriteLine("Files to map to:");
+            foreach (var modKey in npcGroups.Select(x => x.ModKey))
+            {
+                System.Console.WriteLine($" {modKey}");
+            }
+
+            uint count = 0;
 
 
 
@@ -179,189 +273,71 @@ namespace KZNPCPatchers
                 {
 
                     // If our target mod contains a copy of the npc
-                    if (!npcGroup.Npcs.TryGetValue(npc.FormKey, out var sourceNpc)) continue;
+                    // if (!npcGroup.Npcs.TryGetValue(npc.FormKey, out var sourceNpc)) continue;
 
-                    // if(!(npc.Race.Equals(Skyrim.Race.KhajiitRace) || npc.Race.Equals(Skyrim.Race.ArgonianRace))) continue;
-                    // if (!npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female)) continue;
+                    var pickedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
 
-                    // Copy in the face bits
-                    var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
+                    var npcRace = (pickedNpc.Race.Resolve(state.LinkCache)).EditorID;
+                    bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
+                    // bool isProtected = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Essential);
+                    bool isProtected = true;
 
-                    var npcRace = (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID;
-
-
-
-                    // check if npcRace is not null
-
-
-                    // System.Console.WriteLine(modifiedNpc.FormKey.IDString() + "   " + (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID);
+                    // System.Console.WriteLine(pickedNpc.FormKey.IDString() + "   " + (pickedNpc.Race.Resolve(state.LinkCache)).EditorID);
 
                     if (npcRace != null)
                     {
-
+                        if (!IsSelectedRace(npcRace.ToString()) || !isFemale || !isProtected)
+                        {
+                            continue;
+                        }
                         // add weight as key and FormKey as value to seperateWeight Dictionary, if key exists, add to array
-
-
                         if (raceDictionary.ContainsKey(npcRace))
                         {
                             // if key weight exists, add to array
-                            if (raceDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()))
+                            if (raceDictionary[npcRace].ContainsKey(pickedNpc.Weight.ToString()))
                             {
-                                raceDictionary[npcRace][modifiedNpc.Weight.ToString()] = raceDictionary[npcRace][modifiedNpc.Weight.ToString()].Concat(new string[] { modifiedNpc.FormKey.IDString() }).ToArray();
+                                raceDictionary[npcRace][pickedNpc.Weight.ToString()] = raceDictionary[npcRace][pickedNpc.Weight.ToString()].Concat(new string[] { pickedNpc.FormKey.IDString() }).ToArray();
                             }
                             else
                             {
-                                // if key weight does not exist, add key weight and value FormKey to seperateWeight Dictionary
-                                raceDictionary[npcRace].Add(modifiedNpc.Weight.ToString(), new string[] { modifiedNpc.FormKey.IDString() });
+                                raceDictionary[npcRace].Add(pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() });
                             }
-
-                            // raceDictionary[npcRace].Add(npcRace, new string[] { modifiedNpc.FormKey.IDString() });
-                            // seperateWeight[modifiedNpc.Weight.ToString()] = seperateWeight[modifiedNpc.Weight.ToString()].Concat(new string[] { modifiedNpc.FormKey.IDString() }).ToArray();
                         }
                         else
                         {
-                            raceDictionary.Add(npcRace, new Dictionary<string, string[]> { { modifiedNpc.Weight.ToString(), new string[] { modifiedNpc.FormKey.IDString() } } });
-
-                            // raceDictionary.Add(npcRace, new Dictionary<string, string[]> { { npcRace, new string[] { modifiedNpc.FormKey.IDString() } } });
-                            // seperateWeight.Add(modifiedNpc.Weight.ToString(), new string[] { modifiedNpc.FormKey.IDString() });
+                            raceDictionary.Add(npcRace, new Dictionary<string, string[]> { { pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() } } });
                         }
                     }
-
-
-
-                    // Base Source Npc id
-                    string selectedNpcId = "";
-
-                    // Seed if using same name
-                    int seed = 0;
-
-                    // Check if female
-                    bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
-
-                    // Generate seed from name
-                    if(modifiedNpc.Name != null){
-                    seed = (int)modifiedNpc.Name.ToString()[0] % 32;
-                    }
-
-
-                    System.Console.WriteLine("Must at least specify one target mod in order.");
-
-                    // Check Race
-                    if(modifiedNpc.Weight.Equals(Skyrim.Race.KhajiitRace)){
-                       selectedNpcId = KhaRand(modifiedNpc.Weight,seed,isFemale);
-                    }
-                    else{
-                       selectedNpcId = AghRand(modifiedNpc.Weight,seed,isFemale);
-                    }
-
-                    var selectedNpc = state.LoadOrder.PriorityOrder.Npc().WinningOverrides().Where(npc => (npc.FormKey.IDString().Equals(selectedNpcId))).Select(npc => npc.DeepCopy()).ToArray();
-
-                    var selectedNpcNpc = selectedNpc[0];
-
-                    System.Console.WriteLine("Source NPC is " + selectedNpcNpc.FormKey.IDString() + " || " + selectedNpcNpc.Name + " || " + "isFemale: " + isFemale + " || " + selectedNpcNpc.Weight);
-                    System.Console.WriteLine("Target NPC is " + modifiedNpc.FormKey.IDString()+ " || " + modifiedNpc.Name);
-                    System.Console.WriteLine("--------");
-
-                    //From NPC appreance copier
-                    //HANDLE FACEGEN HERE
-                    string selectedNpcNifPath = state.DataFolderPath + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + selectedNpcNpc.FormKey.ModKey.ToString() + "\\00" + selectedNpcNpc.FormKey.IDString() + ".nif";
-                    string modedNifPath = outputDir + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".nif";
-                    if (!File.Exists(selectedNpcNifPath))
-                    {
-                        Console.WriteLine("The following Facegen .nif does not exist. If it is within a BSA, please extract it. Patching of this NPC will be skipped.\n{0}", selectedNpcNifPath);
-                        continue;
-                    }
-
-                    string selectedNpcDdsPath = state.DataFolderPath + "\\textures\\actors\\character\\facegendata\\facetint\\" + selectedNpcNpc.FormKey.ModKey.ToString() + "\\00" + selectedNpcNpc.FormKey.IDString() + ".dds";
-                    string modedDdsPath = outputDir + "\\textures\\actors\\character\\facegendata\\facetint\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".dds";
-                    if (!File.Exists(selectedNpcDdsPath))
-                    {
-                        Console.WriteLine("The following Facegen .dds does not exist. If it is within a BSA, please extract it. Patching of this NPC will be skipped.\n{0}", selectedNpcDdsPath);
-                        continue;
-                    }
-
-                    // Copy NPC Facegen Nif and Dds from the donor to acceptor NPC
-
-                    // first make the output paths if they don't exist
-                    Directory.CreateDirectory(outputDir + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + modifiedNpc.FormKey.ModKey.ToString());
-                    Directory.CreateDirectory(outputDir + "\\textures\\actors\\character\\facegendata\\facetint\\" + modifiedNpc.FormKey.ModKey.ToString());
-
-                    // then copy the facegen to those paths
-                    File.Copy(selectedNpcNifPath, modedNifPath, true);
-                    File.Copy(selectedNpcDdsPath, modedDdsPath, true);
-                    // END FACEGEN
-
-                    // //Race
-                    // modifiedNpc.Weight.SetTo(selectedNpcNpc.Weight);
-
-                    //Head Texture
-                    modifiedNpc.HeadTexture.SetTo(selectedNpcNpc.HeadTexture.FormKeyNullable);
-
-                    //Head Parts
-                    modifiedNpc.HeadParts.Clear(); 
-                    foreach (var hp in selectedNpcNpc.HeadParts)
-                    {
-                        modifiedNpc.HeadParts.Add(hp);
-                    }
-
-                    //Face Morph
-                    if (modifiedNpc.FaceMorph != null && selectedNpcNpc.FaceMorph != null)
-                    {
-                        modifiedNpc.FaceMorph.Clear();
-                        modifiedNpc.FaceMorph.DeepCopyIn(selectedNpcNpc.FaceMorph);
-                    }
-
-                    //Face Parts
-                    if (modifiedNpc.FaceParts != null && selectedNpcNpc.FaceParts != null)
-                    {
-                        modifiedNpc.FaceParts.Clear();
-                        modifiedNpc.FaceParts.DeepCopyIn(selectedNpcNpc.FaceParts);
-                    }
-
-                    //Hair Color
-                    modifiedNpc.HairColor.SetTo(selectedNpcNpc.HairColor.FormKeyNullable);
-
-                    //Texture Lighting
-                    modifiedNpc.TextureLighting = selectedNpcNpc.TextureLighting;
-
-                    //Tint Layers
-                    modifiedNpc.TintLayers.Clear();
-                    foreach (var tl in selectedNpcNpc.TintLayers)
-                    {
-                        TintLayer newTintLayer = new TintLayer();
-                        newTintLayer.DeepCopyIn(tl);
-                        modifiedNpc.TintLayers.Add(newTintLayer);
-                    }
-
-                    //Height and Weight
-                    modifiedNpc.Height = selectedNpcNpc.Height;
-                    modifiedNpc.Weight = selectedNpcNpc.Weight;
                     count++;
                 }
-
-
             }
-            // System.Console.WriteLine("Finished" + seperateWeight);
 
             // loop throught each array in the dictionary and add print them to the console
             foreach (var key in raceDictionary.Keys)
             {
                 System.Console.WriteLine("{0} : {1}", key, raceDictionary[key]);
-
                 foreach (var weight in raceDictionary[key].Keys)
                 {
                     System.Console.WriteLine("\t\t{0} : {1}", weight, raceDictionary[key][weight].Length);
-
-                    foreach (var npc in raceDictionary[key][weight])
-                    {
-                        System.Console.WriteLine("\t\t\t{0}", npc);
-                    }
+                    // foreach (var npc in raceDictionary[key][weight])
+                    // {
+                    //     System.Console.WriteLine("\t\t\t{0}", npc);
+                    // }
                 }
-
             }
-
-
             System.Console.WriteLine($"{count} Npcs add to pools");
+        }
+
+        public static bool IsSelectedRace(String race)
+        {
+            if (race == "RedguardRace" || race == "NordRace" || race == "BretonRace" || race == "ImperialRace" || race == "KhajiitRace" || race == "DarkElfRace" || race == "HighElfRace" || race == "WoodElfRace" || race == "ArgonianRace" || race == "OrcRace")
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
