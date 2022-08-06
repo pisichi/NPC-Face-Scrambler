@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Noggog;
 using Mutagen.Bethesda.Synthesis.Settings;
 
-namespace KZNPCPatchers
+namespace NPCFaceScrambler
 {
     public record Settings
     {
@@ -29,6 +29,16 @@ namespace KZNPCPatchers
         [SynthesisOrder]
         [SynthesisTooltip("Use same name = same appearance")]
         public bool SameName  = false;
+
+
+        [SynthesisOrder]
+        [SynthesisTooltip("Patch female Npcs")]
+        public bool PatchFemale  = true;
+
+
+        [SynthesisOrder]
+        [SynthesisTooltip("Patch male Npcs")]
+        public bool PatchMale  = true;
 
         // [SynthesisOrder]
         // [SynthesisTooltip("Use same Weight")]
