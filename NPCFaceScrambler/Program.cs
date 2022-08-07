@@ -17,6 +17,9 @@ namespace NPCFaceScrambler
         static Lazy<Settings> Settings = null!;
         static Dictionary<string, Dictionary<string, string[]>> femaleNpcsDictionary = new Dictionary<string, Dictionary<string, string[]>>();
         static Dictionary<string, Dictionary<string, string[]>> maleNpcsDictionary = new Dictionary<string, Dictionary<string, string[]>>();
+        // static bool patchFemaleNpcs = Settings.Value.PatchFemale;
+        // static bool patchMaleNpcs = Settings.Value.PatchMale;
+        // static bool sameName = Settings.Value.SameName;
 
 
 
@@ -361,7 +364,7 @@ namespace NPCFaceScrambler
                 {
                     var npcRace = (pickedNpc.Race.Resolve(state.LinkCache)).EditorID;
                     bool isFemale = pickedNpc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
-                    bool isProtected = pickedNpc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Essential) || pickedNpc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Protected) || npcRace == "KhajiitRace" || npcRace == "ArgonianRace";
+                    bool isProtected = pickedNpc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Essential) || pickedNpc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Protected);
                     // bool isProtected = true;
 
                     if (isFemale)
@@ -370,8 +373,8 @@ namespace NPCFaceScrambler
                     }
                     else
                     {
-                        continue;
-                        // npcsDictionary = maleNpcsDictionary;
+                        // continue;
+                        npcsDictionary = maleNpcsDictionary;
                     }
 
 

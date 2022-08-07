@@ -40,6 +40,11 @@ namespace NPCFaceScrambler
         [SynthesisTooltip("Patch male Npcs")]
         public bool PatchMale  = true;
 
+
+        [SynthesisOrder]
+        [SynthesisTooltip("Blocked head part(s)")]
+        public List<String> blockHp = new List<String>(); 
+
         // [SynthesisOrder]
         // [SynthesisTooltip("Use same Weight")]
         // public bool SameWeight  = false;
