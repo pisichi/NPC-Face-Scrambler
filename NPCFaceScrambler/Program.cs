@@ -87,7 +87,7 @@ namespace NPCFaceScrambler
 
             uint count = 0;
 
-            uint ordinary = 0;
+            uint corrupt = 0;
 
 
             // foreach (var npcGroup in npcGroups)
@@ -106,43 +106,57 @@ namespace NPCFaceScrambler
 
                 foreach (var npc in npcGroup.Npcs)
                 {
-
                     var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
                     var npcRace = (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID;
                     bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
 
-                    System.Console.WriteLine($"--- Patching : {npc.Name} || {count}/{npcGroup.Npcs.Count} ---");
-
+                    // System.Console.WriteLine($"--- Patching : {npc.Name} || {count}/{npcGroup.Npcs.Count} ---");
+                    System.Console.WriteLine("-------------------");
 
                     if (npcRace != null)
                     {
                         // check condition
-
                         if (!IsSelectedRace(npcRace.ToString()))
                         {
-                            System.Console.WriteLine("Skipping Npc || Not in selected Race");
-                            System.Console.WriteLine("--------");
+                            System.Console.WriteLine("|\t\t@Skipping Npc || Not in selected Race");
+                            System.Console.WriteLine("-------------------\n");
                             continue;
                         }
 
 
-                        if (!isFemale)
+                        // female only
+                        if (!Settings.Value.PatchMale)
                         {
-                            System.Console.WriteLine("Skipping Npc || Not Female");
-                            System.Console.WriteLine("--------");
-                            continue;
+                            if (!isFemale)
+                            {
+                                System.Console.WriteLine("|\t\t@Skipping Npc || Not Female");
+                                System.Console.WriteLine("-------------------\n");
+                                continue;
+                            }
                         }
+
+                        // male only
+                        if (!Settings.Value.PatchFemale)
+                        {
+                            if (isFemale)
+                            {
+                                System.Console.WriteLine("|\t\t@Skipping Npc || Not Male");
+                                System.Console.WriteLine("-------------------\n");
+                                continue;
+                            }
+                        }
+
 
                         string npcName = npc.Name!.ToString() ?? "test";
 
                         if (npcName.Contains("test"))
                         {
-                            System.Console.WriteLine("Skipping Npc || Has unsupported Name");
-                            System.Console.WriteLine("--------");
+                            System.Console.WriteLine("|\t\t@Skipping Npc || Has unsupported Name");
+                            System.Console.WriteLine("-------------------\n");
                             continue;
                         }
 
-                        // Base Source Npc id
+                        //  ource Npc id
                         string originId = "";
 
                         // Seed if using same name
@@ -152,22 +166,29 @@ namespace NPCFaceScrambler
                         int attempt = 0;
                         bool isHasFaceGen = false;
 
+
+                        // // Generate seed from name
+                        // if (modifiedNpc.Name != null)
+                        // {
+                        //     seed = (int)modifiedNpc.Name.ToString()[0] % 32;
+                        // }
+
                         while (!isHasFaceGen)
                         {
                             attempt++;
-                            System.Console.WriteLine($"///Attempt : {attempt}///");
+                            System.Console.WriteLine($"|\t-Attempt : {attempt}");
 
                             // If reached  attempt limit, break out of the loop
                             if (attempt > 10)
                             {
-                                System.Console.WriteLine("///Pass limit attempt - Skip the Npc///");
+                                System.Console.WriteLine("|\t\t@Pass limit attempt - Skip the Npc");
                                 isHasFaceGen = true;
                                 break;
                             }
 
                             if (!femaleNpcsDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()))
                             {
-                                System.Console.WriteLine("No weight in range, randomizing weight...");
+                                System.Console.WriteLine("|\t\t@No weight in range, randomizing weight...");
 
                                 Random rnd = new Random();
 
@@ -181,31 +202,24 @@ namespace NPCFaceScrambler
                                 }
                                 else
                                 {
-                                    System.Console.WriteLine("No race found");
-                                    System.Console.WriteLine("--------");
+                                    System.Console.WriteLine("|\t\t@No race found");
+                                    System.Console.WriteLine("-------------------\n");
                                     break;
                                 }
                             }
                             else
                             {
-                                System.Console.WriteLine("Pass weight check");
+                                System.Console.WriteLine("|\t-Pass weight check");
                                 originId = Rand(femaleNpcsDictionary[npcRace][modifiedNpc.Weight.ToString()], seed);
-                            }
-
-                            // Generate seed from name
-                            if (modifiedNpc.Name != null)
-                            {
-                                seed = (int)modifiedNpc.Name.ToString()[0] % 32;
                             }
 
 
                             var origin = state.LoadOrder.PriorityOrder.Npc().WinningOverrides().Where(npc => (npc.FormKey.IDString().Equals(originId))).Select(npc => npc.DeepCopy()).ToArray();
 
                             var originNpc = origin[0];
-
-                            System.Console.WriteLine("Source NPC is " + originNpc.FormKey.IDString() + " || " + originNpc.Name + " || " + "isFemale: " + isFemale + " || " + originNpc.Weight);
-                            System.Console.WriteLine("Target NPC is " + modifiedNpc.FormKey.IDString() + " || " + modifiedNpc.Name);
-                            System.Console.WriteLine("--------");
+                            
+                            System.Console.WriteLine($"|\t\t* Source NPC : {originNpc.FormKey.IDString()} {originNpc.Name} || Race : {npcRace} || Weight : {originNpc.Weight} *");
+                            System.Console.WriteLine($"|\t\t* Target NPC : {npc.FormKey.IDString()} {npc.Name} || Race : {npcRace} || Weight : {npc.Weight} *");
 
                             //From NPC appreance copier
                             //HANDLE FACEGEN HERE
@@ -213,24 +227,24 @@ namespace NPCFaceScrambler
                             string modedNifPath = outputDir + "\\meshes\\actors\\character\\facegendata\\facegeom\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".nif";
                             if (!File.Exists(originNifPath))
                             {
-                                Console.WriteLine("The following Facegen .nif does not exist. If it is within a BSA, please extract it. Patching of this NPC will be repeat.\n{0}", originNifPath);
+                                Console.WriteLine("|\t\t@The following Facegen .nif does not exist. If it is within a BSA, please extract it. Patching of this NPC will be repeat.\n|\t{0}", originNifPath);
                                 continue;
                             }
                             else
                             {
-                                Console.WriteLine("Found Facegen .nif. Proceeding to patch...");
+                                Console.WriteLine("|\t-Found Facegen .nif. Proceeding to patch...");
                             }
 
                             string originDdsPath = state.DataFolderPath + "\\textures\\actors\\character\\facegendata\\facetint\\" + originNpc.FormKey.ModKey.ToString() + "\\00" + originNpc.FormKey.IDString() + ".dds";
                             string modedDdsPath = outputDir + "\\textures\\actors\\character\\facegendata\\facetint\\" + modifiedNpc.FormKey.ModKey.ToString() + "\\00" + modifiedNpc.FormKey.IDString() + ".dds";
                             if (!File.Exists(originDdsPath))
                             {
-                                Console.WriteLine("The following Facegen .dds does not exist. If it is within a BSA, please extract it. Patching of this NPC will be repeat.\n{0}", originDdsPath);
+                                Console.WriteLine("|\t\t@The following Facegen .dds does not exist. If it is within a BSA, please extract it. Patching of this NPC will be repeat.\n|\t{0}", originDdsPath);
                                 continue;
                             }
                             else
                             {
-                                Console.WriteLine("Found Facegen .dds. Proceeding to patch...");
+                                Console.WriteLine("|\t-Found Facegen .dds. Proceeding to patch...");
                             }
 
 
@@ -243,6 +257,7 @@ namespace NPCFaceScrambler
                             // then copy the facegen to those paths
                             File.Copy(originNifPath, modedNifPath, true);
                             File.Copy(originDdsPath, modedDdsPath, true);
+
                             // END FACEGEN
 
                             // //Race
@@ -258,17 +273,16 @@ namespace NPCFaceScrambler
                             foreach (var hp in originNpc.HeadParts)
                             {
 
-                                string HeadPart = hp.Resolve(state.LinkCache).EditorID!.ToString() ?? "Ordinary";
-                                Console.WriteLine("Adding Head Part: " + HeadPart);
+                                string HeadPart = hp.Resolve(state.LinkCache).EditorID!.ToString();
+                                Console.WriteLine("|\t\t-Adding Head Part: " + HeadPart);
 
-
-
-                                if (HeadPart.Contains("Ordinary"))
+                                // if (HeadPart.Contains())
+                                if (ContainsAny(HeadPart, Settings.Value.blockHp))
                                 {
-                                    ordinary++;
+                                    corrupt++;
                                     errorHp = HeadPart;
                                     hasPotentialError = true;
-                                    Console.WriteLine("**********The following Facegen is Orinary, Skip************", hp.FormKey.IDString(), HeadPart);
+                                    Console.WriteLine("|\t\t@The following Facegen is in the block list, Skip", hp.FormKey.IDString(), HeadPart);
                                     break;
                                 }
                                 else
@@ -279,7 +293,7 @@ namespace NPCFaceScrambler
 
                             if (hasPotentialError)
                             {
-                                Console.WriteLine("**********The following Facegen has potential error, Skip************", errorHp);
+                                Console.WriteLine("|\t\t@The following Facegen has potential error, Skip", errorHp);
                                 continue;
                             }
                             else
@@ -323,6 +337,9 @@ namespace NPCFaceScrambler
                             modifiedNpc.Height = originNpc.Height;
                             modifiedNpc.Weight = originNpc.Weight;
 
+                            System.Console.WriteLine("Complete");
+                            System.Console.WriteLine("-------------------\n");
+
                         }
                         count++;
                     }
@@ -331,7 +348,7 @@ namespace NPCFaceScrambler
             // System.Console.WriteLine("Finished" + seperateWeight);
 
             System.Console.WriteLine($"Patches {count} Npcs");
-            System.Console.WriteLine($"Skip ordinary {ordinary} Npcs");
+            System.Console.WriteLine($"Skip {corrupt} Npcs");
         }
 
         public static void CreateNpcsPool(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
@@ -422,11 +439,11 @@ namespace NPCFaceScrambler
                 // System.Console.WriteLine("{0} : {1}", key, femaleNpcsDictionary[key]);
                 foreach (var weight in femaleNpcsDictionary[key].Keys)
                 {
-                    // System.Console.WriteLine("\t\t{0} : {1}", weight, femaleNpcsDictionary[key][weight].Length);
+                    // System.Console.WriteLine("\t{0} : {1}", weight, femaleNpcsDictionary[key][weight].Length);
                     femaleNpcsCount += femaleNpcsDictionary[key][weight].Length;
                     // foreach (var npc in femaleNpcsDictionary[key][weight])
                     // {
-                    //     System.Console.WriteLine("\t\t\t{0}", npc);
+                    //     System.Console.WriteLine("\t{0}", npc);
                     // }
                 }
             }
@@ -440,11 +457,11 @@ namespace NPCFaceScrambler
                 // System.Console.WriteLine("{0} : {1}", key, maleNpcsDictionary[key]);
                 foreach (var weight in maleNpcsDictionary[key].Keys)
                 {
-                    // System.Console.WriteLine("\t\t{0} : {1}", weight, maleNpcsDictionary[key][weight].Length);
+                    // System.Console.WriteLine("\t{0} : {1}", weight, maleNpcsDictionary[key][weight].Length);
                     maleNpcsCount += maleNpcsDictionary[key][weight].Length;
                     // foreach (var npc in femaleNpcsDictionary[key][weight])
                     // {
-                    //     System.Console.WriteLine("\t\t\t{0}", npc);
+                    //     System.Console.WriteLine("\t{0}", npc);
                     // }
                 }
             }
@@ -465,6 +482,20 @@ namespace NPCFaceScrambler
                 return false;
             }
         }
+
+        public static bool ContainsAny(string stringToTest, List<string> substrings)
+        {
+            if (string.IsNullOrEmpty(stringToTest) || substrings == null)
+                return false;
+
+            foreach (var substring in substrings)
+            {
+                if (stringToTest.Contains(substring, StringComparison.CurrentCultureIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
     }
 }
 
