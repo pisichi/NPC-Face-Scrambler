@@ -58,6 +58,7 @@ namespace NPCFaceScrambler
 
             var outputDir = Settings.Value.FacegenOutputDirectory;
 
+
             if (!Settings.Value.PatchFemale && !Settings.Value.PatchMale)
             {
                 System.Console.WriteLine("Must at least specify one sex.");
@@ -97,6 +98,8 @@ namespace NPCFaceScrambler
 
             System.Console.WriteLine();
 
+            Dictionary<string, Dictionary<string, string[]>> npcsDictionary;
+
             uint count = 0;
 
             uint corrupt = 0;
@@ -110,6 +113,18 @@ namespace NPCFaceScrambler
                     var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
                     var npcRace = (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID;
                     bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
+
+
+                    if (isFemale)
+                    {
+                        npcsDictionary = femaleNpcsDictionary;
+                    }
+                    else
+                    {
+                        // continue;
+                        npcsDictionary = maleNpcsDictionary;
+                    }
+
 
                     // System.Console.WriteLine($"--- Patching : {npc.Name} || {count}/{npcGroup.Npcs.Count} ---");
                     System.Console.WriteLine("-------------------");
@@ -187,19 +202,19 @@ namespace NPCFaceScrambler
                                 break;
                             }
 
-                            if (!femaleNpcsDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()) || attempt > 3)
+                            if (!npcsDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()) || attempt > 3)
                             {
                                 System.Console.WriteLine("|\t\t@No weight in range or Pass limit attempt, randomizing weight...");
 
                                 Random rnd = new Random();
 
-                                var weightKeys = femaleNpcsDictionary[npcRace].Keys.ToArray();
+                                var weightKeys = npcsDictionary[npcRace].Keys.ToArray();
                                 // randomize the weight from keys
                                 var randomWeight = weightKeys[rnd.Next(weightKeys.Length)];
 
-                                if (femaleNpcsDictionary[npcRace].ContainsKey(randomWeight.ToString()))
+                                if (npcsDictionary[npcRace].ContainsKey(randomWeight.ToString()))
                                 {
-                                    originId = Rand(femaleNpcsDictionary[npcRace][randomWeight.ToString()], seed);
+                                    originId = Rand(npcsDictionary[npcRace][randomWeight.ToString()], seed);
                                 }
                                 else
                                 {
@@ -211,7 +226,7 @@ namespace NPCFaceScrambler
                             else
                             {
                                 System.Console.WriteLine("|\t-Pass weight check");
-                                originId = Rand(femaleNpcsDictionary[npcRace][modifiedNpc.Weight.ToString()], seed);
+                                originId = Rand(npcsDictionary[npcRace][modifiedNpc.Weight.ToString()], seed);
                             }
 
 
@@ -346,8 +361,6 @@ namespace NPCFaceScrambler
                     }
                 }
             }
-            // System.Console.WriteLine("Finished" + seperateWeight);
-
             System.Console.WriteLine($"Patches {count} Npcs");
             System.Console.WriteLine($"Skip {corrupt} Npcs");
         }
