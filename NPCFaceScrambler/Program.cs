@@ -58,7 +58,19 @@ namespace NPCFaceScrambler
 
             var outputDir = Settings.Value.FacegenOutputDirectory;
 
-            //From Face fixer
+            if (!Settings.Value.PatchFemale && !Settings.Value.PatchMale)
+            {
+                System.Console.WriteLine("Must at least specify one sex.");
+                return;
+            }
+
+            if (Settings.Value.SourceMods.Count == 0)
+            {
+                System.Console.WriteLine("Must at least specify one source mod in order.");
+                return;
+            }
+
+
             if (Settings.Value.TargetMods.Count == 0)
             {
                 System.Console.WriteLine("Must at least specify one target mod in order.");
@@ -90,17 +102,6 @@ namespace NPCFaceScrambler
             uint corrupt = 0;
 
 
-            // foreach (var npcGroup in npcGroups)
-            // {
-            //     System.Console.WriteLine($"{npcGroup.Npcs}");
-            // }
-
-
-
-            // // For every Npc that exists
-            // foreach (var npc in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
-            // {
-            //For every Npc group in our target mods, in order
             foreach (var npcGroup in npcGroups)
             {
 
@@ -168,10 +169,10 @@ namespace NPCFaceScrambler
 
 
                         // // Generate seed from name
-                        // if (modifiedNpc.Name != null)
-                        // {
-                        //     seed = (int)modifiedNpc.Name.ToString()[0] % 32;
-                        // }
+                        if (modifiedNpc.Name != null)
+                        {
+                            seed = (int)modifiedNpc.Name.ToString()[0] % 32;
+                        }
 
                         while (!isHasFaceGen)
                         {
@@ -181,14 +182,14 @@ namespace NPCFaceScrambler
                             // If reached  attempt limit, break out of the loop
                             if (attempt > 10)
                             {
-                                System.Console.WriteLine("|\t\t@Pass limit attempt - Skip the Npc");
+                                System.Console.WriteLine("|\t\t@Pass limit attempt - skip Npc...");
                                 isHasFaceGen = true;
                                 break;
                             }
 
-                            if (!femaleNpcsDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()))
+                            if (!femaleNpcsDictionary[npcRace].ContainsKey(modifiedNpc.Weight.ToString()) || attempt > 3)
                             {
-                                System.Console.WriteLine("|\t\t@No weight in range, randomizing weight...");
+                                System.Console.WriteLine("|\t\t@No weight in range or Pass limit attempt, randomizing weight...");
 
                                 Random rnd = new Random();
 
@@ -217,7 +218,7 @@ namespace NPCFaceScrambler
                             var origin = state.LoadOrder.PriorityOrder.Npc().WinningOverrides().Where(npc => (npc.FormKey.IDString().Equals(originId))).Select(npc => npc.DeepCopy()).ToArray();
 
                             var originNpc = origin[0];
-                            
+
                             System.Console.WriteLine($"|\t\t* Source NPC : {originNpc.FormKey.IDString()} {originNpc.Name} || Race : {npcRace} || Weight : {originNpc.Weight} *");
                             System.Console.WriteLine($"|\t\t* Target NPC : {npc.FormKey.IDString()} {npc.Name} || Race : {npcRace} || Weight : {npc.Weight} *");
 
@@ -277,7 +278,7 @@ namespace NPCFaceScrambler
                                 Console.WriteLine("|\t\t-Adding Head Part: " + HeadPart);
 
                                 // if (HeadPart.Contains())
-                                if (ContainsAny(HeadPart, Settings.Value.blockHp))
+                                if (ContainsAny(HeadPart, Settings.Value.BlockHeadpart))
                                 {
                                     corrupt++;
                                     errorHp = HeadPart;
@@ -397,7 +398,11 @@ namespace NPCFaceScrambler
 
                     if (npcRace != null)
                     {
-                        if (!IsSelectedRace(npcRace.ToString()) || !isProtected)
+                        if (!IsSelectedRace(npcRace.ToString()))
+                        {
+                            continue;
+                        }
+                        if (!isProtected && Settings.Value.OnlyImportantNpc)
                         {
                             continue;
                         }
@@ -473,7 +478,11 @@ namespace NPCFaceScrambler
 
         public static bool IsSelectedRace(String race)
         {
-            if (race == "RedguardRace" || race == "NordRace" || race == "BretonRace" || race == "ImperialRace" || race == "KhajiitRace" || race == "DarkElfRace" || race == "HighElfRace" || race == "WoodElfRace" || race == "ArgonianRace" || race == "OrcRace")
+            if (!Settings.Value.OnlyVanillaRace)
+            {
+                return true;
+            }
+            else if (race == "RedguardRace" || race == "NordRace" || race == "BretonRace" || race == "ImperialRace" || race == "KhajiitRace" || race == "DarkElfRace" || race == "HighElfRace" || race == "WoodElfRace" || race == "ArgonianRace" || race == "OrcRace")
             {
                 return true;
             }

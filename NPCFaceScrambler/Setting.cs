@@ -20,7 +20,7 @@ namespace NPCFaceScrambler
         [SynthesisOrder]
         [SynthesisTooltip("Source mods")]
         public List<ModKey> SourceMods = new List<ModKey>();
-        
+
         [SynthesisOrder]
         [SynthesisTooltip("Target mods")]
         public List<ModKey> TargetMods = new List<ModKey>();
@@ -28,22 +28,30 @@ namespace NPCFaceScrambler
 
         [SynthesisOrder]
         [SynthesisTooltip("Use same name = same appearance")]
-        public bool SameName  = false;
+        public bool SameName = false;
 
 
         [SynthesisOrder]
         [SynthesisTooltip("Patch female Npcs")]
-        public bool PatchFemale  = true;
+        public bool PatchFemale = true;
 
 
         [SynthesisOrder]
         [SynthesisTooltip("Patch male Npcs")]
-        public bool PatchMale  = true;
+        public bool PatchMale = true;
+
+        [SynthesisOrder]
+        [SynthesisTooltip("Patch only proteced and essential Npcs")]
+        public bool OnlyImportantNpc = true;
+
+        [SynthesisOrder]
+        [SynthesisTooltip("Patch only Vanilla Race")]
+        public bool OnlyVanillaRace = true;
 
 
         [SynthesisOrder]
         [SynthesisTooltip("Blocked head part(s)")]
-        public List<String> blockHp = new List<String>(); 
+        public List<String> BlockHeadpart = new List<String>();
 
         // [SynthesisOrder]
         // [SynthesisTooltip("Use same Weight")]

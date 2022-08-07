@@ -2,6 +2,14 @@
 # NPC-Face-Scrambler
 
 Scrambles the NPC Appearances!!
+
+Synthesis patch to randomly copy NPCs appearance from the selected mods and assigned its face and default skin to NPCs of the target mods.
+
+However, It'll not be completely random, the NPC that is copied must have the same race(currently only support vanilla humanoid race) and same sex.
+
+It'll try to use NPC with the same weight first for maximum compatibility. 
+
+If something went wrong (No matching weight, not detected face nif, source NPC contains blacklisted face parts) it'll try again up to 10 times, if it's still got an error, it'll skip that NPC.
   
 ## Settings
 

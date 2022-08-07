@@ -351,3 +351,6 @@ MigrationBackup/
 *.zip
 *.7z
 *.rar
+
+# vscode
+.vscode/
