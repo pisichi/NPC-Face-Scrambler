@@ -18,9 +18,6 @@ namespace NPCFaceScrambler
         static IPatcherState<ISkyrimMod, ISkyrimModGetter> _state = null!;
         static Dictionary<string, Dictionary<string, string[]>> femaleNpcsDictionary = new Dictionary<string, Dictionary<string, string[]>>();
         static Dictionary<string, Dictionary<string, string[]>> maleNpcsDictionary = new Dictionary<string, Dictionary<string, string[]>>();
-        // static bool patchFemaleNpcs = Settings.Value.PatchFemale;
-        // static bool patchMaleNpcs = Settings.Value.PatchMale;
-        // static bool sameName = Settings.Value.SameName;
 
 
 
@@ -131,7 +128,7 @@ namespace NPCFaceScrambler
                     // System.Console.WriteLine($"--- Patching : {npc.Name} || {count}/{npcGroup.Npcs.Count} ---");
                     System.Console.WriteLine("-------------------");
 
-                    System.Console.WriteLine($"| Patching : {npc.FormKey.IDString()} {npc.Name} || Sex : {(isFemale ? "female" : "male")} || Race : {npcRacename} {npcRace} *");
+                    System.Console.WriteLine($"| Patching : {npc.FormKey.IDString()} {npc.Name} || isFemale : {isFemale} || Race : {npcRacename} {npcRace} *");
 
                     if (!npcsDictionary.ContainsKey(npcRace))
                     {
@@ -210,6 +207,7 @@ namespace NPCFaceScrambler
                                 if (attempt > 10)
                                 {
                                     System.Console.WriteLine("|\t\t@Pass limit attempt - skip Npc...");
+                                    corrupt++;
                                     isHasFaceGen = true;
                                     break;
                                 }
@@ -314,14 +312,37 @@ namespace NPCFaceScrambler
 
                                 //Head Parts
                                 modifiedNpc.HeadParts.Clear();
+                                bool hasPotentialError = false;
+                                string errorHp = "";
                                 foreach (var hp in originNpc.HeadParts)
                                 {
+
                                     string HeadPart = hp.Resolve(state.LinkCache).EditorID!.ToString();
                                     Console.WriteLine("|\t\t-Adding Head Part: " + HeadPart);
-                                    modifiedNpc.HeadParts.Add(hp);
+
+                                    // if (HeadPart.Contains())
+                                    if (ContainsAny(HeadPart, Settings.Value.BlockHeadpart))
+                                    {
+                                        errorHp = HeadPart;
+                                        hasPotentialError = true;
+                                        Console.WriteLine("|\t\t@The following Facegen is in the block list, Skip", hp.FormKey.IDString(), HeadPart);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        modifiedNpc.HeadParts.Add(hp);
+                                    }
                                 }
 
-                                isHasFaceGen = true;
+                                if (hasPotentialError)
+                                {
+                                    Console.WriteLine("|\t\t@The following Facegen has potential error, Skip", errorHp);
+                                    continue;
+                                }
+                                else
+                                {
+                                    isHasFaceGen = true;
+                                }
 
                                 //Face Morph
                                 if (modifiedNpc.FaceMorph != null && originNpc.FaceMorph != null)
@@ -430,40 +451,42 @@ namespace NPCFaceScrambler
                         }
 
 
-                        if (npcRace != null)
+                        if (npcRace == null)
                         {
+                            continue;
+                        }
 
-                            bool skip = ContainsBadHp(pickedNpc.HeadParts);
-                            if (skip)
+                        // bool skip = ContainsBadHp(pickedNpc.HeadParts);
+                        // if (skip)
+                        // {
+                        //     Console.WriteLine("|\t-Skipping NPC {0} because of bad hp", pickedNpc.Name);
+                        //     break;
+                        // }
+
+                        if (!IsSelectedRace(pickedNpc.Race.Resolve(_state.LinkCache)))
+                        {
+                            continue;
+                        }
+                        if (!isProtected && Settings.Value.OnlyImportantNpc)
+                        {
+                            continue;
+                        }
+                        // add weight as key and FormKey as value to seperateWeight Dictionary, if key exists, add to array
+                        if (npcsDictionary.ContainsKey(npcRace))
+                        {
+                            // if key weight exists, add to array
+                            if (npcsDictionary[npcRace].ContainsKey(pickedNpc.Weight.ToString()))
                             {
-                                Console.WriteLine("|\t-Skipping NPC {0} because of bad hp", pickedNpc.FormKey.ModKey.ToString());
-                                continue;
-                            }
-                            if (!IsSelectedRace(pickedNpc.Race.Resolve(_state.LinkCache)))
-                            {
-                                continue;
-                            }
-                            if (!isProtected && Settings.Value.OnlyImportantNpc)
-                            {
-                                continue;
-                            }
-                            // add weight as key and FormKey as value to seperateWeight Dictionary, if key exists, add to array
-                            if (npcsDictionary.ContainsKey(npcRace))
-                            {
-                                // if key weight exists, add to array
-                                if (npcsDictionary[npcRace].ContainsKey(pickedNpc.Weight.ToString()))
-                                {
-                                    npcsDictionary[npcRace][pickedNpc.Weight.ToString()] = npcsDictionary[npcRace][pickedNpc.Weight.ToString()].Concat(new string[] { pickedNpc.FormKey.IDString() }).ToArray();
-                                }
-                                else
-                                {
-                                    npcsDictionary[npcRace].Add(pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() });
-                                }
+                                npcsDictionary[npcRace][pickedNpc.Weight.ToString()] = npcsDictionary[npcRace][pickedNpc.Weight.ToString()].Concat(new string[] { pickedNpc.FormKey.IDString() }).ToArray();
                             }
                             else
                             {
-                                npcsDictionary.Add(npcRace, new Dictionary<string, string[]> { { pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() } } });
+                                npcsDictionary[npcRace].Add(pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() });
                             }
+                        }
+                        else
+                        {
+                            npcsDictionary.Add(npcRace, new Dictionary<string, string[]> { { pickedNpc.Weight.ToString(), new string[] { pickedNpc.FormKey.IDString() } } });
                         }
 
                         if (isFemale)
@@ -522,7 +545,7 @@ namespace NPCFaceScrambler
                 }
             }
             System.Console.WriteLine();
-            System.Console.WriteLine("Male npc counts: " + maleNpcsCount);
+            System.Console.WriteLine("Other npc counts: " + maleNpcsCount);
             System.Console.WriteLine();
             System.Console.WriteLine($"{count} Npcs add to pools");
         }
@@ -579,20 +602,20 @@ namespace NPCFaceScrambler
         }
 
 
-        public static bool ContainsBadHp(System.Collections.Generic.IReadOnlyList<Mutagen.Bethesda.IFormLinkGetter<Mutagen.Bethesda.Skyrim.IHeadPartGetter>> HeadParts)
-        {
-
-            foreach (var hp in HeadParts)
-            {
-                string HeadPart = hp.Resolve(_state.LinkCache).EditorID!.ToString();
-                if (ContainsAny(HeadPart, Settings.Value.BlockHeadpart))
-                {
-                    Console.WriteLine("|\t\t@The following Facegen is in the block list, Skip", hp.FormKey.IDString(), HeadPart);
-                    return true;
-                }
-            }
-            return false;
-        }
+        // public static bool ContainsBadHp(System.Collections.Generic.IReadOnlyList<Mutagen.Bethesda.IFormLinkGetter<Mutagen.Bethesda.Skyrim.IHeadPartGetter>> HeadParts)
+        // {
+        //     foreach (var hp in HeadParts)
+        //     {
+        //         string HeadPart = hp.Resolve(_state.LinkCache).EditorID!.ToString();
+        //         Console.WriteLine("|\t\t-Adding Head Part: " + HeadPart);
+        //         if (ContainsAny(HeadPart, Settings.Value.BlockHeadpart))
+        //         {
+        //             Console.WriteLine("|\t\t@The following Facegen is in the block list, Skip", HeadPart);
+        //             return true;
+        //         }
+        //     }
+        //     return false;
+        // }
     }
 }
 
