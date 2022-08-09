@@ -4,5 +4,6 @@
   "OneLineDescription": "Scrambles the NPC Appearances!!",
   "LongDescription": "Synthesis patch to randomly copy NPCs appearance from the selected mods and assigned its face and default skin to NPCs of the target mods.",
   "PreferredAutoVersioning": "Default",
-  "RequiredMods": []
+  "RequiredMods": [],
+  "TargetedReleases": []
 }
