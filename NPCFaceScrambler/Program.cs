@@ -515,15 +515,15 @@ namespace NPCFaceScrambler
 
             foreach (var key in femaleNpcsDictionary.Keys)
             {
-                System.Console.WriteLine("{0} : {1}", key, femaleNpcsDictionary[key]);
+                // System.Console.WriteLine("{0} : {1}", key, femaleNpcsDictionary[key]);
                 foreach (var weight in femaleNpcsDictionary[key].Keys)
                 {
-                    System.Console.WriteLine("\t{0} : {1}", weight, femaleNpcsDictionary[key][weight].Length);
+                    // System.Console.WriteLine("\t{0} : {1}", weight, femaleNpcsDictionary[key][weight].Length);
                     femaleNpcsCount += femaleNpcsDictionary[key][weight].Length;
-                    foreach (var npc in femaleNpcsDictionary[key][weight])
-                    {
-                        System.Console.WriteLine("\t{0}", npc);
-                    }
+                    // foreach (var npc in femaleNpcsDictionary[key][weight])
+                    // {
+                    //     System.Console.WriteLine("\t{0}", npc);
+                    // }
                 }
             }
             System.Console.WriteLine();
@@ -533,15 +533,15 @@ namespace NPCFaceScrambler
 
             foreach (var key in maleNpcsDictionary.Keys)
             {
-                System.Console.WriteLine("{0} : {1}", key, maleNpcsDictionary[key]);
+                // System.Console.WriteLine("{0} : {1}", key, maleNpcsDictionary[key]);
                 foreach (var weight in maleNpcsDictionary[key].Keys)
                 {
-                    System.Console.WriteLine("\t{0} : {1}", weight, maleNpcsDictionary[key][weight].Length);
+                    // System.Console.WriteLine("\t{0} : {1}", weight, maleNpcsDictionary[key][weight].Length);
                     maleNpcsCount += maleNpcsDictionary[key][weight].Length;
-                    foreach (var npc in maleNpcsDictionary[key][weight])
-                    {
-                        System.Console.WriteLine("\t{0}", npc);
-                    }
+                    // foreach (var npc in maleNpcsDictionary[key][weight])
+                    // {
+                    //     System.Console.WriteLine("\t{0}", npc);
+                    // }
                 }
             }
             System.Console.WriteLine();
