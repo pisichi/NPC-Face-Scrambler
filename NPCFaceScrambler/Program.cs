@@ -109,9 +109,9 @@ namespace NPCFaceScrambler
 
                 foreach (var npc in npcGroup.Npcs)
                 {
-                    var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
-                    var npcRacename = (modifiedNpc.Race.Resolve(state.LinkCache)).EditorID;
-                    var npcRace = (modifiedNpc.Race.Resolve(state.LinkCache)).FormKey.IDString();
+                    
+                    var npcRacename = (npc.Race.Resolve(state.LinkCache)).EditorID;
+                    var npcRace = (npc.Race.Resolve(state.LinkCache)).FormKey.IDString();
                     bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
 
                     if (isFemale)
@@ -138,7 +138,7 @@ namespace NPCFaceScrambler
                     }
 
                     // check condition
-                    if (!IsSelectedRace(modifiedNpc.Race.Resolve(state.LinkCache)))
+                    if (!IsSelectedRace(npc.Race.Resolve(state.LinkCache)))
                     {
                         System.Console.WriteLine("|\t\t@Skipping Npc || Not in selected Race");
                         corrupt++;
@@ -176,6 +176,8 @@ namespace NPCFaceScrambler
                         corrupt++;
                         continue;
                     }
+
+                    var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
 
 
                     try
