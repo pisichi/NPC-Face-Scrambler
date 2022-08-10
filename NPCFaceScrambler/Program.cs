@@ -109,7 +109,7 @@ namespace NPCFaceScrambler
 
                 foreach (var npc in npcGroup.Npcs)
                 {
-                    
+
                     var npcRacename = (npc.Race.Resolve(state.LinkCache)).EditorID;
                     var npcRace = (npc.Race.Resolve(state.LinkCache)).FormKey.IDString();
                     bool isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
@@ -177,13 +177,14 @@ namespace NPCFaceScrambler
                         continue;
                     }
 
-                    var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
+
 
 
                     try
                     {
                         if (npcRace != null && npcsDictionary.ContainsKey(npcRace))
                         {
+                            var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
 
                             //  source Npc id
                             string originId = "";
