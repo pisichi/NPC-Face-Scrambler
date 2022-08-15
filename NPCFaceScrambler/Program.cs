@@ -581,6 +581,8 @@ namespace NPCFaceScrambler
                 || race.Equals(Skyrim.Race.OrcRaceVampire)
                 || race.Equals(Skyrim.Race.RedguardRace)
                 || race.Equals(Skyrim.Race.RedguardRaceVampire)
+                || race.Equals(Skyrim.Race.ImperialRace)
+                || race.Equals(Skyrim.Race.ImperialRaceVampire)
             )
             {
                 return true;
