@@ -130,58 +130,56 @@ namespace NPCFaceScrambler
 
                     System.Console.WriteLine($"| Patching : {npc.FormKey.IDString()} {npc.Name} || isFemale : {isFemale} || Race : {npcRacename} {npcRace} *");
 
-                    if (!npcsDictionary.ContainsKey(npcRace))
-                    {
-                        System.Console.WriteLine("|\t\t@Skipping Npc || No Race in NPC Pool");
-                        corrupt++;
-                        continue;
-                    }
-
-                    // check condition
-                    if (!IsSelectedRace(npc.Race.Resolve(state.LinkCache)))
-                    {
-                        System.Console.WriteLine("|\t\t@Skipping Npc || Not in selected Race");
-                        corrupt++;
-                        continue;
-                    }
-
-                    // female only
-                    if (!Settings.Value.PatchMale)
-                    {
-                        if (!isFemale)
-                        {
-                            System.Console.WriteLine("|\t\t@Skipping Npc || Not Female");
-                            corrupt++;
-                            continue;
-                        }
-                    }
-
-                    // male only
-                    if (!Settings.Value.PatchFemale)
-                    {
-                        if (isFemale)
-                        {
-                            System.Console.WriteLine("|\t\t@Skipping Npc || Not Male");
-                            corrupt++;
-                            continue;
-                        }
-                    }
-
-
-                    string npcName = npc.Name!.ToString() ?? "test";
-
-                    if (npcName.Contains("test"))
-                    {
-                        System.Console.WriteLine("|\t\t@Skipping Npc || Has unsupported Name");
-                        corrupt++;
-                        continue;
-                    }
-
-
-
 
                     try
                     {
+                        if (!npcsDictionary.ContainsKey(npcRace))
+                        {
+                            System.Console.WriteLine("|\t\t@Skipping Npc || No Race in NPC Pool");
+                            corrupt++;
+                            continue;
+                        }
+
+                        // check condition
+                        if (!IsSelectedRace(npc.Race.Resolve(state.LinkCache)))
+                        {
+                            System.Console.WriteLine("|\t\t@Skipping Npc || Not in selected Race");
+                            corrupt++;
+                            continue;
+                        }
+
+                        // female only
+                        if (!Settings.Value.PatchMale)
+                        {
+                            if (!isFemale)
+                            {
+                                System.Console.WriteLine("|\t\t@Skipping Npc || Not Female");
+                                corrupt++;
+                                continue;
+                            }
+                        }
+
+                        // male only
+                        if (!Settings.Value.PatchFemale)
+                        {
+                            if (isFemale)
+                            {
+                                System.Console.WriteLine("|\t\t@Skipping Npc || Not Male");
+                                corrupt++;
+                                continue;
+                            }
+                        }
+
+
+                        string npcName = npc.Name!.ToString() ?? "test";
+
+                        if (npcName.Contains("test"))
+                        {
+                            System.Console.WriteLine("|\t\t@Skipping Npc || Has unsupported Name");
+                            corrupt++;
+                            continue;
+                        }
+
                         if (npcRace != null && npcsDictionary.ContainsKey(npcRace))
                         {
                             var modifiedNpc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
