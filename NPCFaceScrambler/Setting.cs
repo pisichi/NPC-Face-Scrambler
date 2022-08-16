@@ -41,6 +41,10 @@ namespace NPCFaceScrambler
         public bool PatchMale = true;
 
         [SynthesisOrder]
+        [SynthesisTooltip("Copy requried records to the patch.")]
+        public bool CopyResourcesToPlugin = true;
+
+        [SynthesisOrder]
         [SynthesisTooltip("Patch only proteced and essential Npcs")]
         public bool OnlyImportantNpc = true;
 
@@ -52,6 +56,29 @@ namespace NPCFaceScrambler
         [SynthesisOrder]
         [SynthesisTooltip("Blocked head part(s)")]
         public List<String> BlockHeadpart = new List<String>();
+
+
+        // [SynthesisOrder]
+        // [SynthesisTooltip("Click here to select which NPCs should have their appearance transferred.")]
+        // public HashSet<NACnpc> NPCs { get; set; } = new HashSet<NACnpc>();
+
+
+        // [SynthesisOrder]
+        // [SynthesisTooltip("NPCs source blacklist.")]
+        // public IFormLinkGetter<INpcGetter> ExcludeFromSourcePool { get; set; } = FormLink<INpcGetter>.Null;
+
+        // [SynthesisOrder]
+        // [SynthesisTooltip("NPCs target blacklist.")]
+        // public IFormLinkGetter<INpcGetter> ExcludeFromTarget { get; set; } = FormLink<INpcGetter>.Null;
+
+
+        // [SynthesisOrder]
+        // [SynthesisTooltip("NPCs source blacklist.")]
+        // public IFormLinkGetter<INpcGetter> IncludeInSourcePool { get; set; } = FormLink<INpcGetter>.Null;
+
+        // [SynthesisOrder]
+        // [SynthesisTooltip("NPCs target blacklist.")]
+        // public IFormLinkGetter<INpcGetter> IncludeInTarget { get; set; } = FormLink<INpcGetter>.Null;
 
         // [SynthesisOrder]
         // [SynthesisTooltip("Use same Weight")]

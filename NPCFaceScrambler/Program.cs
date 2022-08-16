@@ -56,6 +56,8 @@ namespace NPCFaceScrambler
             _state = state;
             var outputDir = Settings.Value.FacegenOutputDirectory;
 
+            HashSet<ModKey> PluginsToMerge = new HashSet<ModKey>();
+
 
             if (!Settings.Value.PatchFemale && !Settings.Value.PatchMale)
             {
@@ -87,7 +89,7 @@ namespace NPCFaceScrambler
             System.Console.Write("Target mod(s): ");
             foreach (var modKey in npcGroups.Select(x => x.ModKey))
             {
-                System.Console.Write($"{modKey}");
+                System.Console.Write($"{modKey.ToString()}");
             }
 
             System.Console.WriteLine();
@@ -381,7 +383,26 @@ namespace NPCFaceScrambler
                                 modifiedNpc.Height = originNpc.Height;
                                 modifiedNpc.Weight = originNpc.Weight;
 
+
+
                                 System.Console.WriteLine("Complete");
+
+
+                                if (Settings.Value.CopyResourcesToPlugin)
+                                {
+                                    foreach (var FL in originNpc.ContainedFormLinks)
+                                    {
+                                        if (FL.FormKey.ModKey != state.PatchMod.ModKey
+                                        && FL.FormKey.ModKey.ToString() != "Skyrim.esm"
+                                        && FL.FormKey.ModKey.ToString() != "Dawnguard.esm"
+                                        && FL.FormKey.ModKey.ToString() != "HearthFires.esm"
+                                        && FL.FormKey.ModKey.ToString() != "Dragonborn.esm")
+                                        {
+                                            PluginsToMerge.Add(FL.FormKey.ModKey);
+                                        }
+                                    }
+                                }
+
 
 
                             }
@@ -401,6 +422,14 @@ namespace NPCFaceScrambler
                     {
                         System.Console.WriteLine("-------------------\n");
                     }
+                }
+            }
+            if (Settings.Value.CopyResourcesToPlugin)
+            {
+                foreach (var mk in PluginsToMerge)
+                {
+                    Console.WriteLine("Remapping Dependencies from {0}.", mk.ToString());
+                    state.PatchMod.DuplicateFromOnlyReferenced(state.LinkCache, mk, out var _);
                 }
             }
             System.Console.WriteLine($"Patches {count} Npcs");
